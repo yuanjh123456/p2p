@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hxzy.dao.IUserMapper">
+	<select id="findAll" resultType="user" parameterType="pageBean">
+		select * from user
+		<where>
+			<if test="name!=null and name!='' ">
+				name like '%${name}%'
+				
+				
+			</if>
+		</where>
+	</select>
+	
+	
+	
+	<select id="findByName" resultType="user" parameterType="String">
+		select * from user where name = #{name}
+	</select>
+	
+	<delete id="delete" parameterType="Int">
+		delete from user where id =
+		#{id}
+	</delete>
+	
+	<delete id="delAll" parameterType="list">
+		delete from user 
+		<if test=" list!= null">
+			where id in 
+			<foreach item="id" collection="list" separator="," open="(" close=")" index="index">
+				'${id}'
+			</foreach>
+		</if>
+	</delete>
+	
+	<update id="update" parameterType="user">
+		update user set name = #{name},password = #{password}
+		,sex = #{sex} , birthday = #{birthday} ,filepath = #{filepath} where id = #{id}
+	</update>
+	
+	<update id="submitUppass">
+		update user set password=#{password} where id = #{id} 
+	</update>
+	
+	<insert id="insert" parameterType="user">
+		insert into user (name,password,sex,birthday,filepath) values (#{name},#{password},#{sex},#{birthday},#{filepath})
+	</insert>
+	
+	<select id="findById" parameterType="int" resultType="user">
+		select * from user where id = #{id}
+	</select>
+	
+	<select id="login" resultType="user" parameterType="user">
+		select * from user where name = #{name} and password = #{password}
+	</select>
+	
+	<select id="download" parameterType="int" resultType="String">
+		select filepath from user where id = #{uid}
+	</select>
+	
+	<select id="findRoleByName" parameterType="String" resultType="role">
+		select role.* from user,role,role_user 
+		where user.id = role_user.uid and role_user.rid = role.id and user.name = #{name}
+	</select>
+	
+	<select id="findPermissions" parameterType="String" resultType="permission">
+		select permission.* from user,role,role_user,permission,permission_role
+		where user.name = #{name} and user.id = role_user.uid and role_user.rid = role.id and permission_role.rid = role.id
+		and permission.id = permission_role.perid
+	</select>
+
+</mapper>

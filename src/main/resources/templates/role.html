@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="../easyui/themes/gray/easyui.css">
+<link rel="stylesheet" type="text/css" href="../easyui/themes/icon.css">
+<script type="text/javascript" src="../easyui/jquery.min.js"></script>
+<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="../easyui/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../easyui/jquery.form.js"></script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'center'" style="height: 100%">
+		<div id="u_toolbar">
+			<a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-add'" href="javascript:open()">添加</a>
+			<a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-cancel'" href="javascript:delAll()">删除</a>
+		</div>
+		<div id="rolelist"></div>
+	</div>
+	<div id="w2" class="easyui-dialog" title="添加角色" data-options="iconCls:'icon-save',closed:true,modal:true" style="width:60%;height:400px;padding:10px;">
+       <form id="addUser" class="easyui-form" autocomplete="off">
+            <div style="margin-bottom:20px">
+                <input class="easyui-textbox" name="name" id="name" style="width:80%" data-options="label:'rolename:',required:true">
+            </div>
+            <a class="easyui-linkbutton" onclick="submitForm()" style="width:80px;margin-top:50px;margin-left: 300px">Submit</a>
+        </form>
+    </div>
+    <div id="treeConfig" class="easyui-dialog" title="菜单权限" data-options="iconCls:'icon-save',closed:true,modal:true" style="width:60%;height:400px;padding:10px;">
+		<ul id="tt" class="easyui-tree"></ul>
+		<div style="margin-bottom:40px">
+			<a class="easyui-linkbutton" style="width:100%" onclick="insertTreeRole()">确定</a>
+        </div>
+    </div>
+</body>
+<script type="text/javascript">
+	$(function() {
+		getTable();
+	});
+	
+	
+	//直接进入页面的方法
+	function getTable(){
+		$('#rolelist').datagrid({
+			 url:'/role/findAll',
+			 fitColumns: true,
+		     rownumbers: true,
+		     pagination:true,//设置是否分页
+		     pageList:[10,20,30,50],
+		     pageSize:10,
+			 columns:[[
+				 	{title: '', field: 'id', checkbox:true, width: 100 },
+			        {field:'name',title:'角色名称',width:100},
+			        { title: '操作', field: '1', width: 100,
+		            	formatter: function(value,row,index){
+		            		var str = "";
+		            		str +="<a onclick='treeInit("+row.id+")' style='margin-right:10px'>菜单权限</a><a onclick='deleteone("+row.id+")'>删除</a>";
+		            		return str;
+		    			}
+					}
+			    ]
+			 ]  
+		});
+	};
+	
+	//打开增加表单
+	function open(){
+		$("#id").textbox('setValue',"");
+		$("#name").textbox('setValue',"");
+		$("#birthday").textbox('setValue',"");
+		$('#w2').dialog('open').dialog('setTitle', '新增角色');
+	}
+	
+	//新增的方法
+	function submitForm(){
+		var name = $("#name").val();
+		alert(name);
+		 $.ajax({
+				url:'/role/save',
+				data:{
+					"name":name
+				},
+				dataType:"text",
+				type:'post',
+				success:function(res){
+					$('#w2').window('close');
+					$('#rolelist').datagrid('reload'); 
+				}
+			}) 
+	}
+	
+	//删除一个的方法
+	function deleteone(id){
+		$.ajax({
+			url:'/role/delete',
+			data:{"id":id},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				$('#rolelist').datagrid('reload'); 
+			}
+		}) 
+	}
+	
+	//批量删除
+	function delAll(){
+		var rows=$("#rolelist").datagrid("getChecked");
+		var str = "";
+		for(var i = 0;i<rows.length;i++){
+			str += rows[i].id+"_";
+		}
+		$.ajax({
+			url:'/role/delAll',
+			data:{"str":str},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				$('#rolelist').datagrid('reload'); 
+			}
+		}) 
+	};
+	
+	//菜单权限
+	function treeInit(rid){
+		//var data=[{"id":1,"text":"系统管理","children":[{"checked":false,"id":2,"text":"用户管理"},{"checked":false,"id":3,"text":"角色管理"}]},{"children":[{"checked":false,"id":5,"text":"客户信息"},{"checked":false,"id":6,"text":"账户信息"}],"id":4,"text":"客户管理"}];
+	    var data=[{"checked":false,"children":[{"checked":false,"id":2,"text":"用户管理"},{"checked":false,"id":3,"text":"角色管理"}],"id":1,"text":"系统管理"},{"checked":false,"children":[{"checked":false,"id":5,"text":"客户信息"},{"checked":false,"id":6,"text":"账户信息"}],"id":4,"text":"客户管理"}];
+		$('#tt').tree({
+			lines: true,
+			checkbox: true,
+			url:"/role/treeInit?rid="+rid+""
+			//data:data
+		});
+		$('#treeConfig').dialog('open').dialog('setTitle', '菜单权限');
+	}
+	
+	//设置权限
+	function insertTreeRole(){
+		var rid=$("#rolelist").datagrid("getChecked")[0].id;
+		var nodes = $('#tt').tree('getChecked');
+		var str = "";
+		for(var i= 0;i <nodes.length;i++){
+			str +=nodes[i].id+",";
+		};
+		$.ajax({
+			url:'/role/insertTreeRole',
+			data:{
+				"rid":rid,
+				"str":str
+			},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				$('#treeConfig').window('close');
+				$('#rolelist').datagrid('reload'); 
+				
+			}
+		}) 
+	}
+</script>
+</html>

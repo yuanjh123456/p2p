@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html >
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+<link rel="stylesheet" type="text/css" href="../easyui/themes/gray/easyui.css">
+<link rel="stylesheet" type="text/css" href="../easyui/themes/icon.css">
+<script type="text/javascript" src="../easyui/jquery.min.js"></script>
+<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+<script type="text/javascript" src="../easyui/easyui-lang-zh_CN.js"></script>
+<script type="text/javascript" src="../easyui/jquery.form.js"></script>
+</head>
+<body class="easyui-layout">
+	<div data-options="region:'center'" style="height: 100%">
+		<div id="u_toolbar">
+			<input class="easyui-searchbox" id="searchcon" data-options="prompt:'Please Input Value'" style="width:10%">
+			<span shiro:hasPermission="user:select" style="cursor: pointer;" id="search">搜索</span> 
+			<a shiro:hasPermission="user:add" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-add'" href="javascript:open()">添加</a>
+			<a shiro:hasPermission="user:del" class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-cancel'" href="javascript:delAll()">删除</a>
+			<a class="easyui-linkbutton" data-options="plain:true,iconCls:'icon-redo'" href="javascript:exportExcel()">导出execl</a>
+		</div>
+		<div id="userlist"></div>
+	</div>
+	<div id="w2" class="easyui-dialog" title="添加用户" data-options="iconCls:'icon-save',closed:true,modal:true" style="width:60%;height:400px;padding:10px;">
+       <form id="addUser" class="easyui-form" method="post" autocomplete="off" enctype="multipart/form-data">
+            <input type="hidden" name="id" id="id" class="easyui-textbox">
+            <div style="margin-bottom:20px">
+                <input class="easyui-textbox" name="name" id="name" style="width:80%" data-options="label:'姓名:',required:true">
+            </div>
+            <div style="margin-bottom:20px">
+                <input class="easyui-passwordbox" prompt="Password" name="password" id="password" style="width:80%" data-options="label:'密码 :',required:true">
+            </div>
+            <div style="margin-bottom:20px">
+            	<label for="accept" class="textbox-label">性别:</label>
+                	<span>先生</span><input id="sex0" type="radio" name="sex" value="0" checked>
+               		<span>女士</span><input id="sex1" type="radio" name="sex" value="1">
+            </div>
+            <div style="margin-bottom:20px">
+                <input class="easyui-datebox" name="birthday" id="birthday" style="width:80%" data-options="label:'出生年月:',required:true">
+            </div>
+            <div style="margin-bottom:20px">
+            	<input class="easyui-filebox" name="img" id="img" label="File1:" data-options="prompt:'Choose a file...',required:true" style="width:80%">
+        	</div>
+            <a class="easyui-linkbutton" onclick="submitForm()" style="width:80px;margin-top:50px;margin-left: 300px">提交</a>
+        </form>
+    </div>
+    <!-- 配置角色 -->
+    <div id="roleConfig" class="easyui-dialog" title="角色分配" data-options="iconCls:'icon-save',closed:true,modal:true" style="width:60%;height:400px;padding:10px;">
+       <form id="addRole" class="easyui-form" autocomplete="off">
+            <div style="margin-bottom:20px">
+            	<select id="select1" name="state" label="角色分配：" labelPosition="top" style="width:70%;"></select>
+            </div>
+            <a class="easyui-linkbutton" onclick="submitRole()" style="width:80px;margin-top:50px;margin-left: 300px">Submit</a>
+        </form>
+    </div>
+</body>
+<script type="text/javascript">
+	$(function() {
+		getTable();
+	});
+	
+	
+	$("#search").click(function(){
+		var search = $('#searchcon').val();
+		$('#userlist').datagrid({
+			 url:'/user/findAll',
+			 queryParams:{"search":search}
+		})
+	})
+	
+	//直接进入页面的方法
+	function getTable(){
+		$('#userlist').datagrid({
+			 url:'/user/findAll',
+			 fitColumns: true,
+		     rownumbers: true,
+		     toolbar:'#u_toolbar',
+		     pagination:true,//设置是否分页
+		     pageList:[10,20,30,50],
+		     pageSize:10,
+			 columns:[[
+				 	{title: '', field: 'id', checkbox:true, width: 100 },
+			        {field:'name',title:'姓名',width:100},
+			        {field:'sexStr',title:'性别',width:100},
+			        {field:'birthdayStr',title:'出生日期',width:100},
+			        {title: '下载附件', field: '0', width: 100,
+		            	formatter: function(value,row,index){
+		            		var str = "";
+		            		str +="<a href='javascript:download("+row.id+")' style='margin-left:100px'>附件</a>";
+		            		return str;
+		    			}
+					},
+			        {title: '操作', field: '1', width: 100,
+		            	formatter: function(value,row,index){
+		            		var str = "";
+		            		str +="<a shiro:hasPermission='user:update' onclick='updateone("+row.id+")' style='margin-right:10px'>修改</a><a onclick='deleteone("+row.id+")' style='margin-right:10px'>删除</a><a onclick='roleConfig("+row.id+")'>角色配置</a>";
+		            		return str;
+		    			}
+					}
+			    ]
+			 ]  
+		});
+	};
+	
+	//打开增加表单
+	function open(){
+		$("#id").textbox('setValue',"");
+		$("#name").textbox('setValue',"");
+		$("#password").textbox('setValue',"");
+		$("#birthday").textbox('setValue',"");
+		$('#password').passwordbox('textbox').attr('readonly',false);
+		$('#w2').dialog('open').dialog('setTitle', '新增用户');
+	}
+	
+	//新增的方法
+	function submitForm(){
+		var id = $("#id").val();
+		var name = $("#name").val();
+		var password = $("#password").val();
+		var sex = $("input[name='sex']").val();
+		var birthday = $("#birthday").val();
+		alert("id  "+id+"  name  "+name+"  password  "+password+"  sex   "+sex+"   birthday  "+birthday+"  img  "+img);
+		$("#addUser").ajaxSubmit({
+			url:'/user/save',
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				$('#w2').window('close');
+				$('#userlist').datagrid('reload'); 
+			}
+		}) 
+	}
+	
+	//删除一个的方法
+	function deleteone(id){
+		$.ajax({
+			url:'/user/delete',
+			data:{"id":id},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				alert(res);
+				$('#userlist').datagrid('reload'); 
+			}
+		}) 
+	}
+	
+	//修改的方法
+	function updateone(id){
+		$('#w2').dialog('open').dialog('setTitle', '修改用户');
+		$('#password').passwordbox('textbox').attr('readonly',true);
+		$.ajax({
+			url:'/user/findById',
+			data:{"id":id},
+			dataType:"json",
+			type:'post',
+			success:function(data){
+				$("#id").textbox('setValue',data.id);
+				$("#name").textbox('setValue',data.name);
+				$("#password").passwordbox('setValue',data.password);
+				if (data.sex == "0") {
+		        	$("input[name='sex'][value='0']").prop("checked",true); 
+		        }else if(data.sex == "1"){
+		            $("input[name='sex'][value='1']").prop("checked",true); 
+		        } 
+				$("#birthday").datebox('setValue',data.birthdayStr);
+			}
+		}) 
+	}
+	
+	//批量删除
+	function delAll(){
+		var rows=$("#userlist").datagrid("getChecked");
+		var str = "";
+		for(var i = 0;i<rows.length;i++){
+			str += rows[i].id+"_";
+		}
+		alert(str);
+		$.ajax({
+			url:'/user/delAll',
+			data:{"str":str},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				alert(res);
+				$('#userlist').datagrid('reload'); 
+				
+			}
+		}) 
+	};
+	
+	//导出Excel表格
+	function exportExcel(){
+		var name = $('#searchcon').val();
+		window.location.href="/user/exportExcel?name="+encodeURI(encodeURI(name));
+	}
+		
+	//角色配置
+	function roleConfig(id){
+		$.ajax({
+			url:'/user/findAllRole',
+			dataType:"json",
+			type:'post',
+			success:function(res){
+				var str = "";
+				for(var i in res.list){
+					str += '<option value="'+res.list[i].id+'">'+res.list[i].name+'</option>';
+				}
+				$('#select1').html(str);
+				$('#roleConfig').dialog('open').dialog('setTitle', '角色修改');
+			}
+		}) 
+	};
+	
+	function submitRole(){
+		var rid = $('#select1 option:selected').val();
+		var uid=$("#userlist").datagrid("getChecked");
+		 $.ajax({
+			url:'/user/insertRoleAndUser',
+			data:{
+				"uid":uid[0].id,
+				"rid":rid
+			},
+			dataType:"text",
+			type:'post',
+			success:function(res){
+				$('#roleConfig').window('close');				
+			}
+		})  
+	} 
+	
+	//下载附件
+	function download(uid){
+		window.location.href="/user/download?uid="+uid;
+	}
+</script>
+</html>

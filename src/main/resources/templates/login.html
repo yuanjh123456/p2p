@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Basic TextBox - jQuery EasyUI Demo</title>
+	<link rel="stylesheet" type="text/css" href="../easyui/themes/gray/easyui.css">
+	<link rel="stylesheet" type="text/css" href="../easyui/themes/icon.css">
+	<script type="text/javascript" src="../easyui/jquery.min.js"></script>
+	<script type="text/javascript" src="../easyui/jquery.easyui.min.js"></script>
+	<script type="text/javascript" src="../easyui/easyui-lang-zh_CN.js"></script>
+	<script type="text/javascript" src="../easyui/jquery.form.js"></script>
+	</head>
+<body>
+    <div style="margin:100px 0px 0px 500px">
+    <div class="easyui-panel" title="Login" style="width:100%;max-width:400px;padding:30px 60px;">
+        <form id="form">
+	        <div style="margin-bottom:20px">
+	            <input class="easyui-textbox" name="name" label="UserName:" labelPosition="top" style="width:100%;">
+	        </div>
+	        <div style="margin-bottom:20px">
+	            <input class="easyui-passwordbox" name="password" label="First Name:" labelPosition="top" style="width:100%;">
+	        </div>
+	        <div>
+	            <a class="easyui-linkbutton" onclick="submitForm()" iconCls="icon-ok" style="width:100%;height:32px">Login</a>
+	        </div>
+        </form>
+    </div>
+    </div>
+</body>
+<script type="text/javascript">
+	$(function(){
+		
+	});
+	function submitForm(){
+		$.ajax({
+			url:'/main/loginForm',
+			data:$('#form').serialize(),
+			dataType:"text",
+			type:'post',
+			success:function(res){		
+				if(res=="success"){
+					window.location.href="/main/tomain";
+/* 					$(window).attr('location','/main/tomain'); */
+/* 					window.location.href = "http://www.baidu.com"; */
+				}else{
+					alert(res+"123456489");
+				}
+			}
+		}) 
+	};
+</script>
+
+</html>

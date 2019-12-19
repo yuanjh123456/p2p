@@ -1,0 +1,81 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.hxzy.dao.IRoleMapper">
+	<select id="findAll" resultType="role" parameterType="pageBean">
+		select * from role
+		<where>
+			<if test="name!=null and name!='' ">
+				name like '%${name}%'
+			</if>
+		</where>
+	</select>
+	
+	<select id="findAllRole" resultType="role">
+		select * from role
+	</select>
+	
+	<delete id="delete" parameterType="int">
+		delete from role where id =
+		#{id}
+	</delete>
+	
+	<insert id="insert" parameterType="role">
+		insert into role (name)
+		values(#{name})
+	</insert>
+	
+	<insert id="insertRoleAndUser" parameterType="map">
+		insert into role_user (uid,rid) values(#{uid},#{rid})
+	</insert>
+	
+	<delete id="delAll" parameterType="list">
+		delete from role
+		<if test=" list!= null">
+			where id in
+			<foreach item="id" collection="list" separator="," open="("
+				close=")" index="index">
+				'${id}'
+			</foreach>
+		</if>
+	</delete>
+	
+	<select id="findTreeByPid" parameterType="int" resultType="Tree">
+		select * from tree where pid = #{pid}
+	</select>
+	
+	<select id="findParentTreeByRid" parameterType="int" resultType="Tree">
+		select * from tree 
+			where id in (
+				select t.pid from role_user ru,tree_role tr,tree t 
+				where uid = #{uid} and tr.rid = ru.rid and tr.tid = t.id
+			)
+	</select>
+	
+	<select id="findChildenTreeByPid" parameterType="int" resultType="Tree">
+		select t.* from role_user ru,tree_role tr,tree t 
+		where uid = #{uid} and tr.rid = ru.rid and tr.tid = t.id and pid = #{pid}
+	</select>
+	<insert id="insertTreeRole" parameterType="int">
+		insert into tree_role (rid,tid) values(#{rid},#{mid})
+	</insert>
+	
+	<select id="findTreeByRid" resultType="Tree" parameterType="int">
+		select DISTINCT t.* from tree t,tree_role tr 
+		<where>
+			<if test="rid!=null and rid!=0">
+				tr.rid = #{rid} and tr.tid = t.id
+			</if>
+		</where>
+	</select>
+	
+	<delete id="deleteTreeRole" parameterType="int">
+		delete from tree_role where rid=#{rid}
+	</delete>
+	
+	<delete id="deleteRoleAndUser" parameterType="int">
+		delete from role_user where uid = #{uid}
+	</delete>
+	
+	
+	
+</mapper>
